@@ -2,6 +2,29 @@ import * as THREE from 'https://threejsfundamentals.org/threejs/resources/threej
 import {OrbitControls} from 'https://threejsfundamentals.org/threejs/resources/threejs/r127/examples/jsm/controls/OrbitControls.js';
 import {GUI} from 'https://threejsfundamentals.org/threejs/../3rdparty/dat.gui.module.js';
 
+class MinMaxGUIHelper {
+  constructor(obj, minProp, maxProp, minDif) {
+    this.obj = obj;
+    this.minProp = minProp;
+    this.maxProp = maxProp;
+    this.minDif = minDif;
+  }
+  get min() {
+    return this.obj[this.minProp];
+  }
+  set min(v) {
+    this.obj[this.minProp] = v;
+    this.obj[this.maxProp] = Math.max(this.obj[this.maxProp], v + this.minDif);
+  }
+  get max() {
+    return this.obj[this.maxProp];
+  }
+  set max(v) {
+    this.obj[this.maxProp] = v;
+    this.min = this.min;  // this will call the min setter
+  }
+}
+
 class ColorGUIHelper {
   constructor(object, prop) {
     this.object = object;
@@ -54,6 +77,14 @@ class Cube extends Geometry {
   }
 }
 
+function updateGroupGeometry( mesh, geometry ) {
+  mesh.geometry.dispose();
+  mesh.geometry = geometry;
+
+  // these do not update nicely together if shared
+
+}
+
 class Sphere extends Geometry {
   constructor(index, scene, gui, radius) {
     super(index, scene, gui);
@@ -63,6 +94,23 @@ class Sphere extends Geometry {
     this.geometry = new THREE.SphereGeometry(this.radius, this.widthDivisions, this.heightDivisions);
     this.mesh = new THREE.Mesh(this.geometry, this.material);
   }
+
+  update() {
+    this.geometry = new THREE.SphereGeometry(this.radius, this.widthDivisions, this.heightDivisions);
+    updateGroupGeometry(this.mesh, this.geometry);
+  }
+
+  addGUIFolder(name) {
+    const folder = this.gui.addFolder(name + Number(this.index + 1));
+		folder.add(this.mesh.position, 'x', -10, 10);
+		folder.add(this.mesh.position, 'y', -10, 10);
+		folder.add(this.mesh.position, 'z', -10, 10);
+    folder.add(this, 'radius', 0, 10).onChange(() => {
+      this.update();
+  })
+    folder.addColor(new ColorGUIHelper(this.material,'color'),'value');
+  }
+
 }
 
 class Cone extends Geometry {
@@ -74,17 +122,54 @@ class Cone extends Geometry {
     this.geometry = new THREE.ConeGeometry(this.radius, this.height, this.radialSegments);
     this.mesh = new THREE.Mesh(this.geometry, this.material);
   }
+
+  update() {
+    this.geometry = new THREE.ConeGeometry(this.radius, this.height, this.radialSegments);
+    updateGroupGeometry(this.mesh, this.geometry);
+  }
+
+  addGUIFolder(name) {
+    const folder = this.gui.addFolder(name + Number(this.index + 1));
+		folder.add(this.mesh.position, 'x', -10, 10);
+		folder.add(this.mesh.position, 'y', -10, 10);
+		folder.add(this.mesh.position, 'z', -10, 10);
+    folder.add(this, 'radius', 0, 10).onChange(() => {
+      this.update();
+    });
+    folder.add(this, 'height', 0, 10).onChange(() => {
+      this.update();
+    });
+    folder.addColor(new ColorGUIHelper(this.material,'color'),'value');
+  }
 }
 
 class Cylinder extends Geometry {
   constructor(index, scene, gui, radius) {
     super(index, scene, gui);
-    this.radiusTop = radius;
-    this.radiusBottom = radius;
+    this.radius = radius;
     this.height = 6;
     this.radialSegments = 16;
-    this.geometry = new THREE.CylinderGeometry(this.radiusTop, this.radiusTop, this.height, this.radialSegments);
+    this.geometry = new THREE.CylinderGeometry(this.radius, this.radius, this.height, this.radialSegments);
     this.mesh = new THREE.Mesh(this.geometry, this.material);
+  }
+
+  update() {
+    this.geometry = new THREE.CylinderGeometry(this.radius, this.radius, this.height, this.radialSegments);
+    updateGroupGeometry(this.mesh, this.geometry);
+  }
+
+  addGUIFolder(name) {
+    const folder = this.gui.addFolder(name + Number(this.index + 1));
+		folder.add(this.mesh.position, 'x', -10, 10);
+		folder.add(this.mesh.position, 'y', -10, 10);
+		folder.add(this.mesh.position, 'z', -10, 10);
+    folder.add(this, 'radius', 0, 10).onChange(() => {
+      this.update();
+    });
+    folder.add(this, 'height', 0, 10).onChange(() => {
+      this.update();
+    });
+    folder.addColor(new ColorGUIHelper(this.material,'color'),'value');
   }
 }
 
@@ -108,6 +193,113 @@ class Circle extends Geometry {
     this.material = new THREE.MeshPhongMaterial({color: '#CA8',  side: THREE.DoubleSide});
     this.mesh = new THREE.Mesh(this.geometry, this.material);
   }
+
+  update() {
+    this.geometry = new THREE.CircleGeometry(this.radius, this.segments);
+    updateGroupGeometry(this.mesh, this.geometry);
+  }
+
+  addGUIFolder(name) {
+    const folder = this.gui.addFolder(name + Number(this.index + 1));
+		folder.add(this.mesh.position, 'x', -10, 10);
+		folder.add(this.mesh.position, 'y', -10, 10);
+		folder.add(this.mesh.position, 'z', -10, 10);
+    folder.add(this, 'radius', 0, 10).onChange(() => {
+      this.update();
+    });
+    folder.addColor(new ColorGUIHelper(this.material,'color'),'value');
+  }
+}
+
+class Dodecahedron extends Geometry {
+  constructor(index, scene, gui, radius) {
+    super(index, scene, gui);
+    this.radius = radius;
+    this.geometry = new THREE.DodecahedronGeometry(this.radius);
+    this.mesh = new THREE.Mesh(this.geometry, this.material);
+  }
+
+  update() {
+    this.geometry = new THREE.DodecahedronGeometry(this.radius);
+    updateGroupGeometry(this.mesh, this.geometry);
+  }
+
+  addGUIFolder(name) {
+    const folder = this.gui.addFolder(name + Number(this.index + 1));
+		folder.add(this.mesh.position, 'x', -10, 10);
+		folder.add(this.mesh.position, 'y', -10, 10);
+		folder.add(this.mesh.position, 'z', -10, 10);
+    folder.add(this, 'radius', 0, 10).onChange(() => {
+      this.update();
+    });
+    folder.addColor(new ColorGUIHelper(this.material,'color'),'value');
+  }
+}
+
+class Icosahedron extends Geometry {
+  constructor(index, scene, gui, radius) {
+    super(index, scene, gui);
+    this.radius = radius;
+    this.geometry = new THREE.IcosahedronGeometry(this.radius);
+    this.mesh = new THREE.Mesh(this.geometry, this.material);
+  }
+
+  update() {
+    this.geometry = new THREE.IcosahedronGeometry(this.radius);
+    updateGroupGeometry(this.mesh, this.geometry);
+  }
+
+  addGUIFolder(name) {
+    const folder = this.gui.addFolder(name + Number(this.index + 1));
+		folder.add(this.mesh.position, 'x', -10, 10);
+		folder.add(this.mesh.position, 'y', -10, 10);
+		folder.add(this.mesh.position, 'z', -10, 10);
+    folder.add(this, 'radius', 0, 10).onChange(() => {
+      this.update();
+    });
+    folder.addColor(new ColorGUIHelper(this.material,'color'),'value');
+  }
+}
+
+function makeXYZGUI(gui, vector3, name, onChangeFn) {
+  const folder = gui.addFolder(name);
+  folder.add(vector3, 'x', -100, 100).onChange(onChangeFn);
+  folder.add(vector3, 'y', 0, 100).onChange(onChangeFn);
+  folder.add(vector3, 'z', -100, 100).onChange(onChangeFn);
+  folder.open();
+}
+
+class Light {
+  constructor(scene) {
+    this.scene = scene;
+    this.color =  0xFFFFFF;
+    this.intensity = 1;
+    this.light = new THREE.PointLight(this.color, this.intensity);
+    this.helper = new THREE.PointLightHelper(this.light);
+  }
+
+  addLight() {
+    this.light.position.set(0, 10, 0);
+    this.scene.add(this.light);
+  }
+
+  addHelper() {
+    this.scene.add(this.helper);
+  }
+
+  updateLight() {
+    this.helper.update();
+  }
+
+  addGUI() {
+    const gui = new GUI();
+    const lightFolder = gui.addFolder('Источник света');
+    lightFolder.addColor(new ColorGUIHelper(this.light, 'color'), 'value').name('color');
+    lightFolder.add(this.light, 'intensity', 0, 2, 0.01);
+    lightFolder.add(this.light, 'distance', 0, 40).onChange(this.updateLight);
+    makeXYZGUI(lightFolder, this.light.position, 'Позиция света');
+  }
+  
 }
 
 function main() {
@@ -130,36 +322,7 @@ function main() {
   const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
   camera.position.set(0, 10, 20);
 
-  class MinMaxGUIHelper {
-    constructor(obj, minProp, maxProp, minDif) {
-      this.obj = obj;
-      this.minProp = minProp;
-      this.maxProp = maxProp;
-      this.minDif = minDif;
-    }
-    get min() {
-      return this.obj[this.minProp];
-    }
-    set min(v) {
-      this.obj[this.minProp] = v;
-      this.obj[this.maxProp] = Math.max(this.obj[this.maxProp], v + this.minDif);
-    }
-    get max() {
-      return this.obj[this.maxProp];
-    }
-    set max(v) {
-      this.obj[this.maxProp] = v;
-      this.min = this.min;  // this will call the min setter
-    }
-  }
 
-  function makeXYZGUI(gui, vector3, name, onChangeFn) {
-    const folder = gui.addFolder(name);
-    folder.add(vector3, 'x', -10, 10).onChange(onChangeFn);
-    folder.add(vector3, 'y', 0, 10).onChange(onChangeFn);
-    folder.add(vector3, 'z', -10, 10).onChange(onChangeFn);
-    folder.open();
-  }
 
   function updateCamera() {
     camera.updateProjectionMatrix();
@@ -203,39 +366,15 @@ function main() {
       circleIndex += 1;
 	  },
     addDodecahedron: function () {
-      const radius = 3;
-      const geometry = new THREE.DodecahedronGeometry(radius);
-      const material = new THREE.MeshPhongMaterial({color: '#CA8',  side: THREE.DoubleSide});
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.position.set(0, radius + 2, 0);
-      scene.add(mesh);
-      const dodecahedronFolder = gui.addFolder('Dodecahedron' + Number(dodecahedronIndex + 1));
-      dodecahedronFolder.add(mesh.position, 'x', -10, 10);
-      dodecahedronFolder.add(mesh.position, 'y', -10, 10);
-      dodecahedronFolder.add(mesh.position, 'z', -10, 10);
-      dodecahedronFolder.add(mesh.scale, 'x', 0, 10)
-                  .name('Ширина');
-      dodecahedronFolder.add(mesh.scale, 'y', 0, 10)
-                  .name('Высота');
-      dodecahedronFolder.addColor(new ColorGUIHelper(material, 'color'), 'value');
+      const dodecahedron = new Dodecahedron(dodecahedronIndex, scene, gui, 4)
+      dodecahedron.addGeometry();
+      dodecahedron.addGUIFolder('Dodecahedron');
       dodecahedronIndex += 1;
     },
     addIcosahedron: function () {
-      const radius = 3;
-      const geometry = new THREE.IcosahedronGeometry(radius);
-      const material = new THREE.MeshPhongMaterial({color: '#CA8',  side: THREE.DoubleSide});
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.position.set(0, radius + 2, 0);
-      scene.add(mesh);
-      const icosahedronFolder = gui.addFolder('Icosahedron' + Number(icosahedronIndex + 1));
-      icosahedronFolder.add(mesh.position, 'x', -10, 10);
-      icosahedronFolder.add(mesh.position, 'y', -10, 10);
-      icosahedronFolder.add(mesh.position, 'z', -10, 10);
-      icosahedronFolder.add(mesh.scale, 'x', 0, 10)
-                  .name('Ширина');
-      icosahedronFolder.add(mesh.scale, 'y', 0, 10)
-                  .name('Высота');
-      icosahedronFolder.addColor(new ColorGUIHelper(material, 'color'), 'value');
+      const icosahedron = new Icosahedron(icosahedronIndex, scene, gui, 4)
+      icosahedron.addGeometry();
+      icosahedron.addGUIFolder('Icosahedron');
       icosahedronIndex += 1;
     },
   };
@@ -272,7 +411,8 @@ function main() {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('grey');
 
-  {
+  //Добавление плоскости для сцены
+  { 
     const planeSize = 400;
 
     const loader = new THREE.TextureLoader();
@@ -298,27 +438,12 @@ function main() {
     mesh.add(axes);
   }
 
+  //Добавление источника света
   {
-    const color = 0xFFFFFF;
-    const intensity = 1;
-    const light = new THREE.PointLight(color, intensity);
-    light.position.set(0, 10, 0);
-    scene.add(light);
-
-    const helper = new THREE.PointLightHelper(light);
-    scene.add(helper);
-
-    function updateLight() {
-      helper.update();
-    }
-
-    const gui = new GUI();
-    const lightFolder = gui.addFolder('Источник света');
-    lightFolder.addColor(new ColorGUIHelper(light, 'color'), 'value').name('color');
-    lightFolder.add(light, 'intensity', 0, 2, 0.01);
-    lightFolder.add(light, 'distance', 0, 40).onChange(updateLight);
-
-    makeXYZGUI(lightFolder, light.position, 'Позиция света');
+    const light = new Light(scene);
+    light.addLight();
+    light.addHelper();
+    light.addGUI();
   }
 
   function resizeRendererToDisplaySize(renderer) {
