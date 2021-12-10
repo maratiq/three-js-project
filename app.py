@@ -15,4 +15,3 @@ UserManager({'mediator': mediator, 'db': db})
 app = web.Application()
 Router(app, web, mediator)
 web.run_app(app)
-
