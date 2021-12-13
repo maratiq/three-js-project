@@ -103,7 +103,8 @@ class Light {
 
 function main() {
   const canvas = document.querySelector('#c');
-  const renderer = new THREE.WebGLRenderer({canvas});
+  const renderer = new THREE.WebGLRenderer({canvas, antialias: true });
+
 
   let cubeIndex = 0;
   let sphereIndex = 0;
